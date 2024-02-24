@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: xxl-job-executor-sample
+  cloud:
+    nacos:
+      username: nacos
+      password: nacos
+      discovery:
+        server-addr: 127.0.0.1:8848 # 192.168.0.237:8848
+        group: DEFAULT_GROUP
+        namespace: 69419dca-ff35-4e83-8cfc-4971cf55853c
+      # 以下的config将读取nacos 配置中心其配置内容等同于 happy8-admin-dev.yaml = application-dev.yml
+      #config:
+      #  server-addr: localhost:8848 #Nacos作为配置中心地址
+      #  file-extension: yaml #指定yaml格式配置
+      #  refresh-enabled: true # Nacos动态感知配置文件变化，默认true
+      #  group: DEFAULT_GROUP
+
+xxl:
+  job:
+    plus:
+      admin:
+        # xxl-job-admin注册到注册中心的名称，默认xxl-job-admin，可不用配置。如xxl-job-admin注册名改动，请同步修改
+        service-name: xxl-job-admin
+        # 使用默认的就好，可以不用配置
+        access-token: default_token
+        #log-path:
+        #context-path:
+        #log-retention-days:
+      executor:
+        # executor 注册到xxl-job-admin executor列表的名称，默认同spring.application.name，可不用配置
+        service-name: ${spring.application.name}

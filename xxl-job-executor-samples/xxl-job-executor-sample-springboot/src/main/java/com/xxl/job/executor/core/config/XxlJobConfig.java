@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Configuration;
  *
  * @author xuxueli 2017-04-28
  */
-@Configuration
+//@Configuration // 取消该该配置避免它与xxl-job-plus起冲突
 public class XxlJobConfig {
     private Logger logger = LoggerFactory.getLogger(XxlJobConfig.class);
 

@@ -9,8 +9,29 @@
 	<artifactId>xxl-job-admin</artifactId>
 	<packaging>jar</packaging>
 
+	<properties>
+		<maven-jar-plugin.version>3.1.1</maven-jar-plugin.version>
+	</properties>
+
 	<dependencyManagement>
 		<dependencies>
+			<!-- SpringCloud 微服务 -->
+			 <dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-dependencies</artifactId>
+				<version>2021.0.5</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<!-- SpringCloud Alibaba 微服务 -->
+			<dependency>
+				<groupId>com.alibaba.cloud</groupId>
+				<artifactId>spring-cloud-alibaba-dependencies</artifactId>
+				<version>2021.0.5.0</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+
 			<dependency>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-starter-parent</artifactId>
@@ -22,6 +43,20 @@
 	</dependencyManagement>
 
 	<dependencies>
+		<!-- Begin 注册中心 & 配置中心 若要使用注册中心与配置中心请解开注释-->
+		<dependency>
+			<groupId>com.alibaba.cloud</groupId>
+			<artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.alibaba.cloud</groupId>
+			<artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+		</dependency>
+		<!-- End 注册中心 & 配置中心 若要使用注册中心与配置中心请解开注释-->
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-bootstrap</artifactId>
+		</dependency>
 
 		<!-- starter-web：spring-webmvc + autoconfigure + logback + yaml + tomcat -->
 		<dependency>
@@ -77,7 +112,7 @@
 
 	<build>
 		<plugins>
-			<plugin>
+			<!--<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<version>${spring-boot.version}</version>
@@ -88,7 +123,7 @@
 						</goals>
 					</execution>
 				</executions>
-			</plugin>
+			</plugin>-->
 			<!-- docker -->
 			<plugin>
 				<groupId>com.spotify</groupId>
@@ -107,6 +142,130 @@
 					</resources>
 				</configuration>
 			</plugin>
+
+
+			<!-- 配置文件与资源文件 拷贝到config目录 -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>2.6</version>
+				<executions>
+					<execution>
+						<id>copy-resources</id>
+						<phase>package</phase>
+						<goals>
+							<goal>copy-resources</goal>
+						</goals>
+						<configuration>
+							<!-- 配置文件输出到单独的目录 config，这些文件最终不打包到jar中 -->
+							<outputDirectory>${project.build.directory}/config</outputDirectory>
+							<resources>
+								<resource>
+									<directory>src/main/resources</directory>
+									<!-- 特殊的资源文件不输出到单独的目录，这些文件最终会打包到jar中 -->
+									<excludes>
+										<exclude>**/i18n/**</exclude>
+										<exclude>**/mybatis/**</exclude>
+										<exclude>**/public/**</exclude>
+										<exclude>**/static/**</exclude>
+										<exclude>**/templates/**</exclude>
+										<exclude>**/db/**</exclude>
+										<exclude>spy.properties</exclude>
+										<exclude>rebel.xml</exclude>
+									</excludes>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- 配置文件与资源文件 不打进主程序jar包
+                 主程序jar包的META-INFO/MANIFEST文件写入依赖jar定义
+            -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>${maven-jar-plugin.version}</version>
+				<configuration>
+					<excludes>
+						<exclude>**/application*.yml</exclude>
+						<exclude>**/application*.properties</exclude>
+						<exclude>**/logback*.xml</exclude>
+						<exclude>**/log4j*.xml</exclude>
+						<exclude>**/bootstrap.yml</exclude>
+						<exclude>**/setting.properties</exclude>
+						<exclude>**/rebel.xml</exclude>
+					</excludes>
+					<archive>
+						<manifest>
+							<addClasspath>true</addClasspath>
+							<classpathPrefix>lib/</classpathPrefix>
+							<useUniqueVersions>false</useUniqueVersions>
+						</manifest>
+					</archive>
+				</configuration>
+			</plugin>
+
+			<!-- 依赖库单独输出到 lib 目录，不打进主程序 -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>copy-dependencies</id>
+						<phase>package</phase>
+						<goals>
+							<goal>copy-dependencies</goal>
+						</goals>
+						<configuration>
+							<!--
+                            各子模块按照实际层级定义各模块对应的属性值，检查所有微服务模块依赖jar文件合并复制到同一个目录
+                            详见各子模块中 boot-jar-output 属性定义
+                            -->
+							<!--
+                            <outputDirectory>${boot-jar-output}/lib</outputDirectory>
+                            -->
+							<outputDirectory>${project.build.directory}/lib</outputDirectory>
+							<includeScope>runtime</includeScope>
+							<excludeTransitive>false</excludeTransitive>
+							<stripVersion>false</stripVersion>
+							<!--<silent>true</silent>-->
+							<overWriteReleases>false</overWriteReleases>
+							<overWriteSnapshots>false</overWriteSnapshots>
+							<overWriteIfNewer>true</overWriteIfNewer>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- springboot 重新打主程序jar包，排除所有maven依赖jar -->
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<version>${spring-boot.version}</version>
+				<configuration>
+					<includeSystemScope>true</includeSystemScope>
+					<mainClass>com.xxl.job.admin.XxlJobAdminApplication</mainClass>
+					<!-- 排除所有maven依赖jar -->
+					<includes>
+						<include>
+							<groupId>null</groupId>
+							<artifactId>null</artifactId>
+						</include>
+					</includes>
+					<layout>ZIP</layout>
+					<!--<outputDirectory>${boot-jar-output}</outputDirectory>-->
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>repackage</goal><!-- 重新打包成springboot的可运行jar包 -->
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
 		</plugins>
 	</build>
 

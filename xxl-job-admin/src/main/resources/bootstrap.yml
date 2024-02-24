@@ -1,0 +1,41 @@
+# 加载顺序：先加载bootstrap.yml再加载application.yml和其他配置文件，若使用配置中心则最终加载nacos中的配置
+# Data ID = ${spring.application.name}-${spring.profile.active}.${spring.cloud.nacos.config.file-extension}
+# Group   = ${spring.cloud.nacos.discovery.group}
+# 详解：https://github.com/alibaba/spring-cloud-alibaba/wiki/Nacos-config
+# 从Spring Cloud Edgware开始，@EnableDiscoveryClient 或@EnableEurekaClient 可省略。只需加上相关依赖，并进行相应配置，即可将微服务注册到服务发现组件上。
+
+#server:
+#  port: 8080 # bootstrap.yml 这里的 serverPort 值 会被 application.yml 和 nacos Data ID中 的 serverPort 值覆盖。
+
+spring:
+  application:
+    name: xxl-job-admin
+  profiles:
+    active: dev # bootstrap.yml 这里的 profilesActive 值 会覆盖 application.yml 的 profilesActive 值。
+
+  cloud:
+    nacos:
+      username: nacos
+      password: nacos
+      discovery:
+        server-addr: 127.0.0.1:8848 #Nacos服务注册中心地址
+        group: DEFAULT_GROUP # 分组的常见场景：不同的应用或组件使用了相同的配置类型，如 database_url 配置和 MQ_topic 配置。
+        namespace: 69419dca-ff35-4e83-8cfc-4971cf55853c # 没有指定默认就是public，若指定需要填写名称空间id 常用场景之一是不同环境的配置的区分隔离，例如开发测试环境和生产环境的资源（如配置、服务）隔离等
+      # 以下的config将读取nacos 配置中心其配置内容等同于 ${spring.application.name}-${spring.profiles.active}.yaml = application-${spring.profiles.active}.yml
+      #config:
+      #  server-addr: 192.168.0.237:8848 #Nacos作为配置中心地址
+      #  file-extension: yaml #指定yaml格式配置
+      #  refresh-enabled: true # Nacos动态感知配置文件变化，默认true
+      #  group: DEFAULT_GROUP # 分组的常见场景：不同的应用或组件使用了相同的配置类型，如 database_url 配置和 MQ_topic 配置。
+      #  namespace: 69419dca-ff35-4e83-8cfc-4971cf55853c # 没有指定默认就是public，若指定需要填写名称空间id 常用场景之一是不同环境的配置的区分隔离，例如开发测试环境和生产环境的资源（如配置、服务）隔离等
+
+# 总结
+# 加载顺序规则：
+# 1、加载 bootstrap.yml
+# 1、application.yml (profilesActive以bootstrap.yml的为准)
+# 3、application-${profilesActive}.yml
+# 4、nacos 中 Data ID匹配的配置文件
+
+# 若使用配置中心 将 application-dev.yml 文件内容配置到 nacos 中；重命名 application-dev.yml 和 application.yml为bak文件 保留 bootstrap.yml
+# 若不使用配置中心 恢复 application-dev.yml.bak 和 application.yml.bak为 yml文件
+# 若不使用注册中心和配置中心 注释掉整合nacos的maven配置
