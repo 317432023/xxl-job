@@ -24,9 +24,8 @@ xxl:
         service-name: xxl-job-admin
         # 使用默认的就好，可以不用配置
         access-token: default_token
-        #log-path:
-        #context-path:
-        #log-retention-days:
       executor:
         # executor 注册到xxl-job-admin executor列表的名称，默认同spring.application.name，可不用配置
         service-name: ${spring.application.name}
+        log-path: ./logs/xxl-job/jobhandler # /data/applogs/xxl-job/jobhandler
+        log-retention-days: 30
